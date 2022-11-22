@@ -64,7 +64,7 @@ Hooks.on('renderChatMessage', (message, [html], messageData) => {
             if (termLis[i - 1]) termLis[i - 1].remove();
             else termLis[i + 1].remove();
 
-            termLis[i].innerText = '(' + termLis[i].innerText + ')';
+            //termLis[i].innerText = '(' + termLis[i].innerText + ')';
         }
 
         formulaDiv.after(newFormula);

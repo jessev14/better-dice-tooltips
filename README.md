@@ -11,3 +11,4 @@ Donations help fund updates and new modules!
 
 Simple module that combines the dice tooltip and formula styles.
 
+![](https://raw.githubusercontent.com/jessev14/better-dice-tooltips/main/better-dice-formula.png)

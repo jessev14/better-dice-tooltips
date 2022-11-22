@@ -1,4 +1,14 @@
 .dice-tooltip .dice-rolls .roll.term {
     background-image: none;
     width: fit-content;
+    min-width: fit-content;
+}
+
+.ric.dice-roll .dice-tooltip.dice-formula {
+    order: unset;
+}
+
+.ric.dice-roll .result {
+    height: 35px;
+    line-height: 35px;
 }

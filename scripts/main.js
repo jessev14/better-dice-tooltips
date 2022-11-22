@@ -8,8 +8,8 @@ Hooks.once('init', () => {
 });
 
 
-Hooks.on('renderChatMessage', (message, [html], messageData) => {
-    if (!message.isRoll) return;
+Hooks.on('renderChatMessage', function betterDiceTooltips(message, [html], messageData) {
+    if (!message.isRoll && !message.flags['rolls-in-chat']) return;
 
     const tooltips = html.querySelectorAll('.dice-tooltip');
     for (const tooltip of tooltips) {
@@ -36,11 +36,9 @@ Hooks.on('renderChatMessage', (message, [html], messageData) => {
         });
         diceListOl.querySelector('li:last-child').remove();
 
-        let formulaDiv;
-        const isMultiattack = message.flags["multiattack-5e"]?.isMultiattack;
-        if (isMultiattack) formulaDiv = html.querySelector('div.dice-formula');
-        else formulaDiv = tooltip.previousElementSibling;
+        const formulaDiv = html.querySelector('div.dice-formula');
         if (!formulaDiv) return;
+        logg({formulaDiv})
 
         const formulaText = formulaDiv.innerText;
         const formulaParts = formulaText.split(' ');
@@ -65,6 +63,7 @@ Hooks.on('renderChatMessage', (message, [html], messageData) => {
         }
 
         const termLis = diceListOl.querySelectorAll('li');
+        const isMultiattack = message.flags["multiattack-5e"]?.isMultiattack;
         for (let i = 0; i < termLis.length; i++) {
             if (isMultiattack && termLis[i].classList.contains('die')) {
                 termLis[i].innerText = termLis[i].title;
@@ -77,7 +76,7 @@ Hooks.on('renderChatMessage', (message, [html], messageData) => {
             else termLis[i + 1].remove();
         }
 
-        formulaDiv.after(newFormula);
+        formulaDiv.before(newFormula);
         formulaDiv.remove();
         tooltip.remove();
     }

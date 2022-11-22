@@ -1,5 +1,7 @@
 const moduleID = 'better-dice-tooltips';
 
+const logg = x => console.log(x);
+
 
 Hooks.once('init', () => {
     libWrapper.register(moduleID, 'ChatLog.prototype._onDiceRollClick', function () { }, 'OVERRIDE');
@@ -34,7 +36,12 @@ Hooks.on('renderChatMessage', (message, [html], messageData) => {
         });
         diceListOl.querySelector('li:last-child').remove();
 
-        const formulaDiv = tooltip.previousElementSibling;
+        let formulaDiv;
+        const isMultiattack = message.flags["multiattack-5e"]?.isMultiattack;
+        if (isMultiattack) formulaDiv = html.querySelector('div.dice-formula');
+        else formulaDiv = tooltip.previousElementSibling;
+        if (!formulaDiv) return;
+
         const formulaText = formulaDiv.innerText;
         const formulaParts = formulaText.split(' ');
         let i = 0;
@@ -59,12 +66,15 @@ Hooks.on('renderChatMessage', (message, [html], messageData) => {
 
         const termLis = diceListOl.querySelectorAll('li');
         for (let i = 0; i < termLis.length; i++) {
+            if (isMultiattack && termLis[i].classList.contains('die')) {
+                termLis[i].innerText = termLis[i].title;
+                termLis[i].classList.remove('max', 'min');
+            }
+
             if (!termLis[i].classList.contains('discarded')) continue;
 
             if (termLis[i - 1]) termLis[i - 1].remove();
             else termLis[i + 1].remove();
-
-            //termLis[i].innerText = '(' + termLis[i].innerText + ')';
         }
 
         formulaDiv.after(newFormula);

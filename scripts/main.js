@@ -38,7 +38,6 @@ Hooks.on('renderChatMessage', function betterDiceTooltips(message, [html], messa
 
         const formulaDiv = html.querySelector('div.dice-formula');
         if (!formulaDiv) return;
-        logg({formulaDiv})
 
         const formulaText = formulaDiv.innerText;
         const formulaParts = formulaText.split(' ');

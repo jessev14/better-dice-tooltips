@@ -36,8 +36,9 @@ Hooks.on('renderChatMessage', function betterDiceTooltips(message, [html], messa
         });
         diceListOl.querySelector('li:last-child').remove();
 
-        const formulaDiv = html.querySelector('div.dice-formula');
-        if (!formulaDiv) return;
+        const parentDiv = tooltip.parentElement;
+        const formulaDiv = parentDiv.querySelector('div.dice-formula');
+        if (!formulaDiv) continue;
 
         const formulaText = formulaDiv.innerText;
         const formulaParts = formulaText.split(' ');

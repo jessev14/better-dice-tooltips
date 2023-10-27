@@ -11,6 +11,8 @@ Hooks.once('init', () => {
 Hooks.on('renderChatMessage', function betterDiceTooltips(message, [html], messageData) {
     if (!message.isRoll && !message.flags['rolls-in-chat']) return;
 
+    if (game.modules.get('hide-gm-rolls')?.active && game.settings.get('hide-gm-rolls', 'sanitize-rolls') && !game.user.isGM) return;
+
     const tooltips = html.querySelectorAll('.dice-tooltip');
     for (const tooltip of tooltips) {
         const newFormula = document.createElement('section');

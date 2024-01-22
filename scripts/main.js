@@ -14,8 +14,9 @@ function parseTooltip(tooltip, options) {
     tooltip.querySelectorAll('.dice').forEach(head => {
         const formula = head.querySelector('.part-formula')?.innerText;
         if(formula === null) return;
-        const regex = /(\d+)d(\d+)(kh|l)?/
+        const regex = /(\d*)d(\d+)(kh|l)?/
         const [ _, diceCount, diceSize, takeOne ] = regex.exec(formula);
+        if(diceCount === "") diceCount = 1; 
         let dice = [];
         head.querySelectorAll('.roll.die').forEach(d => {
             const r = d.cloneNode(true);
@@ -30,10 +31,7 @@ function parseTooltip(tooltip, options) {
             dice = dice.flatMap(d => [d, createTerm('+')]);
             dice.pop();
         }
-        terms.push({
-            formula,
-            dice,
-        });
+        terms.push(dice);
     });
     return terms;
 }
@@ -44,16 +42,13 @@ function dfs_text_replace(div, data, index) {
     for(let c of div.childNodes) {
         if(c instanceof Text) {
             if(index < data.length) {
-                let terms = c.textContent.split(/(\d+d\d+(?:kh|l)?)/g);
+                let terms = c.textContent.split(/(\d*d\d+(?:kh|l)?)/g);
                 for(let i = 0; i < terms.length; i += 2) {
                     if(terms[i].length > 0) {
                         newChildren.push(createTerm(terms[i]));
                     }
                     if(i + 1 >= terms.length) continue;
-                    if(terms[i+1] !== data[index].formula) {
-                        logg('Better Dice Tooltips | inconsistent parse', c.textContent, data, i/2, index)
-                    }
-                    newChildren.push(data[index++].dice);
+                    newChildren.push(data[index++]);
                 }
             } else {
                 newChildren.push(createTerm(c.textContent));

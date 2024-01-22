@@ -1,3 +1,10 @@
+.dice-roll .dice-result .dice-tooltip.dice-formula {
+    display: flex;
+    justify-content: center;
+}
+.chat-message .message-content .damage-roll .dice-result .dice-tooltip.dice-formula {
+    flex-direction: initial;
+}
 .dice-tooltip .dice-rolls .roll.term {
     background-image: none;
     width: fit-content;

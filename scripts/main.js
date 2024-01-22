@@ -2,6 +2,65 @@ const moduleID = 'better-dice-tooltips';
 
 const logg = x => console.log(x);
 
+function createTerm(text) {
+    const add = document.createElement('li');
+    add.classList.add('roll', 'term');
+    add.innerText = text;
+    return add;
+}
+
+function parseTooltip(tooltip, options) {
+    let terms = [];
+    tooltip.querySelectorAll('.dice').forEach(head => {
+        const formula = head.querySelector('.part-formula')?.innerText;
+        if(formula === null) return;
+        const regex = /(\d*)d(\d+)(kh|l)?/
+        const [ _, diceCount, diceSize, takeOne ] = regex.exec(formula);
+        if(diceCount === "") diceCount = 1; 
+        let dice = [];
+        head.querySelectorAll('.roll.die').forEach(d => {
+            const r = d.cloneNode(true);
+            r.title = `d${diceSize}`;
+            if (options.isMultiattack) {
+                r.innerText = r.title;
+                r.classList.remove('max', 'min');
+            }
+            dice.push(r);
+        });
+        if(!takeOne) {
+            dice = dice.flatMap(d => [d, createTerm('+')]);
+            dice.pop();
+        }
+        terms.push(dice);
+    });
+    return terms;
+}
+
+function dfs_text_replace(div, data, index) {
+    if(index >= data.length) return;
+    let newChildren = [];
+    for(let c of div.childNodes) {
+        if(c instanceof Text) {
+            if(index < data.length) {
+                let terms = c.textContent.split(/(\d*d\d+(?:kh|l)?)/g);
+                for(let i = 0; i < terms.length; i += 2) {
+                    if(terms[i].length > 0) {
+                        newChildren.push(createTerm(terms[i]));
+                    }
+                    if(i + 1 >= terms.length) continue;
+                    newChildren.push(data[index++]);
+                }
+            } else {
+                newChildren.push(createTerm(c.textContent));
+            }
+        } else {
+            index = dfs_text_replace(c, data, index);
+            newChildren.push(c);
+        }
+    }
+    div.replaceChildren(...newChildren.flat());
+    return index;
+}
 
 Hooks.once('init', () => {
     libWrapper.register(moduleID, 'ChatLog.prototype._onDiceRollClick', function () { }, 'OVERRIDE');
@@ -10,76 +69,23 @@ Hooks.once('init', () => {
 
 Hooks.on('renderChatMessage', function betterDiceTooltips(message, [html], messageData) {
     if (!message.isRoll && !message.flags['rolls-in-chat']) return;
-
+    
     if (game.modules.get('hide-gm-rolls')?.active && game.settings.get('hide-gm-rolls', 'sanitize-rolls') && !game.user.isGM) return;
-
+    
     const tooltips = html.querySelectorAll('.dice-tooltip');
     for (const tooltip of tooltips) {
-        const newFormula = document.createElement('section');
-        newFormula.classList.add('dice-tooltip', 'dice-formula');
-        newFormula.style.display = 'block';
-        newFormula.innerHTML = `
-            <div class="dice">
-                <ol class="dice-rolls" style="display:flex; justify-content: center; flex-wrap: wrap;">
-                </ol>
-            </div>
-        `;
-
-        const diceListOl = newFormula.querySelector('ol');
-        tooltip.querySelectorAll('li.roll.die').forEach(n => {
-            const die = n.cloneNode(true);
-            const d = die.classList.value.split(' ').find(c => c.match(/\d/))?.split('d')[1];
-            if (d) die.title = `d${d}`;
-            diceListOl.append(die);
-            const add = document.createElement('li');
-            add.classList.add('roll', 'term');
-            add.innerText = '+';
-            diceListOl.append(add);
-        });
-        diceListOl.querySelector('li:last-child').remove();
-
-        const parentDiv = tooltip.parentElement;
-        const formulaDiv = parentDiv.querySelector('div.dice-formula');
+        const formulaDiv = tooltip.parentElement.querySelector('div.dice-formula');
         if (!formulaDiv) continue;
+        dfs_text_replace(formulaDiv, parseTooltip(tooltip, {
+            isMultiattack: message.flags["multiattack-5e"]?.isMultiattack,
+        }), 0);
+        formulaDiv.classList.add('dice-tooltip');
+        const diceRolls = document.createElement('ol');
+        diceRolls.classList.add('dice-rolls');
+        diceRolls.style = "display: flex; justify-content: center; flex-wrap: wrap";
+        diceRolls.replaceChildren(...formulaDiv.childNodes);
+        formulaDiv.replaceChildren(diceRolls);
 
-        const formulaText = formulaDiv.innerText;
-        const formulaParts = formulaText.split(' ');
-        let i = 0;
-        while (i < formulaParts.length) {
-            if (formulaParts[i].includes('d') || !formulaParts[i]) {
-                i += 2;
-                continue;
-            };
-
-            const add = document.createElement('li');
-            add.classList.add('roll', 'term');
-            add.innerText = formulaParts[i - 1] === '+' ? '+' : '-';
-            diceListOl.append(add);
-
-            const term = document.createElement('li');
-            term.classList.add('roll', 'term');
-            term.innerText = formulaParts[i];
-            diceListOl.append(term);
-
-            i += 2;
-        }
-
-        const termLis = diceListOl.querySelectorAll('li');
-        const isMultiattack = message.flags["multiattack-5e"]?.isMultiattack;
-        for (let i = 0; i < termLis.length; i++) {
-            if (isMultiattack && termLis[i].classList.contains('die')) {
-                termLis[i].innerText = termLis[i].title;
-                termLis[i].classList.remove('max', 'min');
-            }
-
-            if (!termLis[i].classList.contains('discarded')) continue;
-
-            if (termLis[i - 1]) termLis[i - 1].remove();
-            else termLis[i + 1].remove();
-        }
-
-        formulaDiv.before(newFormula);
-        formulaDiv.remove();
         tooltip.remove();
     }
 });
